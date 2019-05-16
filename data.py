@@ -23,6 +23,8 @@ USERS = {}
 
 UTILITY = []
 SIMILARITY = []
+UTILITY_CATEGORIES = []
+SIMILARITY_CATEGORIES = []
 
 # - - - - - - - - - - - - - - - - load functions - - - - - - - - - - - - - - - #
 
@@ -119,16 +121,43 @@ def calculate_similarity(utility):
     numpy.fill_diagonal(matrix, 1)
     return pandas.DataFrame(matrix, columns=utility.index, index=utility.index)
 
+def split_categories(row):
+    cat = row['categories']
+    if not cat:
+      return pandas.Series([row['business_id']] + [])
+
+    cats = [c.strip() for c in cat.lower().split(',')]
+    return pandas.Series([row['business_id']] + cats)
+
+def get_categories(businesses):
+    categories_m = businesses.apply(lambda row: split_categories(row), axis=1)
+    stack_categories = categories_m.set_index(0).stack()
+    df_stack_categories = stack_categories.to_frame()
+    df_stack_categories['business_id'] = stack_categories.index.droplevel(1)
+    df_stack_categories.columns = ['category', 'business_id']
+    return df_stack_categories.reset_index()[['business_id', 'category']]
+
+def pivot_categories(df):
+    return df.pivot_table(index='business_id', columns='category', aggfunc='size', fill_value=0)
+
+def create_categorie_similarties(matrix):
+    npu = matrix.values
+    m1 = npu @ npu.T
+    diag = numpy.diag(m1)
+    m2 = m1 / diag
+    m3 = numpy.minimum(m2, m2.T)
+    return pandas.DataFrame(m3, index=matrix.index, columns=matrix.index)
+
 # - - - - - - - - - - - - - - - initialisation - - - - - - - - - - - - - - - - #
 
 def initialisation(n=-1):
     global CITIES, BUSINESSES, REVIEWS
-    global UTILITY, SIMILARITY
+    global UTILITY, SIMILARITY, UTILITY_CATEGORIES, SIMILARITY_CATEGORIES
 
     print(" * Loading data for %i cities..." % n)
 
     # load data
-    CITIES = load_cities()[:n]
+    CITIES = load_cities()[:n] if n >=0 else load_cities()
     BUSINESSES = load(CITIES, "business")
     REVIEWS = load(CITIES, "review", ['funny', 'cool', 'useful', 'text', 'date'])
 
@@ -174,9 +203,27 @@ def initialisation(n=-1):
 
     # calculate similarity matrix
     start = time.time()
-    similarity = calculate_similarity(utility)
+    df_categories = get_categories(business)
+    print('CATEGORIES')
+    print(df_categories.head())
+    end = time.time()
+    print(" * Getting categories took %f seconds" % (end - start))
+
+    start = time.time()
+    UTILITY_CATEGORIES = pivot_categories(df_categories)
+    print('UTILITY')
+    print(UTILITY_CATEGORIES.head())
+    end = time.time()
+    print(" * Calculating utility matrix took %f seconds" % (end - start))
+
+    start = time.time()
+    SIMILARITY_CATEGORIES = create_categorie_similarties(UTILITY_CATEGORIES)
+    print('SIMILARITY')
+    print(SIMILARITY_CATEGORIES.head())
     end = time.time()
     print(" * Calculating similarity matrix took %f seconds" % (end - start))
+    SIMILARITY_CATEGORIES.to_pickle('similarity_content.pkl')
+
 
     similarity.to_pickle('similarity.pkl')
     SIMILARITY = similarity
