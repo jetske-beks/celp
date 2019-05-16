@@ -1,4 +1,5 @@
 from data import UTILITY, SIMILARITY
+from operator import itemgetter
 
 import data
 import pandas
@@ -25,10 +26,10 @@ def weighted_mean(neighborhood, user):
     # calculate the predicted rating
     return (ratings * neighborhood).sum() / neighborhood.sum()
 
-def recommend(user_id='WxXB_DB_Im9mb00M8balAg', business_id='U_ihDw5JhfmSKBUUkpEQqw', city='agincourt', n=10):
+def recommend(user=None, business_id='U_ihDw5JhfmSKBUUkpEQqw', city=None, n=10):
     """
     Returns n recommendations as a list of dicts.
-    Optionally takes in a user_id, business_id and/or city.
+    Optionally takes in a user, business_id and/or city.
     A recommendation is a dictionary in the form of:
         {
             business_id:str
@@ -43,20 +44,51 @@ def recommend(user_id='WxXB_DB_Im9mb00M8balAg', business_id='U_ihDw5JhfmSKBUUkpE
         data.UTILITY = pandas.read_pickle('utility.pkl')
     if not SIMILARITY:
         data.SIMILARITY = pandas.read_pickle('similarity.pkl')
-    # get business data
-    business = data.get_business(city, business_id)
-    # get prediction
-    stars = weighted_mean(select_neighborhood(user_id, business_id), user_id)
-    # collect recommendation info
-    prediction = {
-        'business_id': business_id,
-        'stars': stars,
-        'name': business['name'],
-        'city': city,
-        'address': business['address']
-    }
+    # fill in user, city, business
+    if not user:
+        user = data.get_user('John')
+    if not city:
+        city = user['city']
+    # get city data
+    businesses = data.get_city(city)
+    while len(businesses) < n:
+        city = random.choice(data.load_cities())
+        business = data.get_city(city)
+        businesses.extend(business)
+
+    # make predictions for all businesses in the city
+    prediction_list = []
+    for business in businesses:
+        if business['business_id'] == business_id:
+            continue
+        # save info about the business
+        prediction = {
+            'id': business['business_id'],
+            'count': business['review_count'],
+            'avg': business['stars'],
+            'city': business['city'].lower()
+            } 
+        # get prediction
+        prediction['rating'] = weighted_mean(select_neighborhood(user['user_id'], prediction['id']), user['user_id'])
+        prediction_list.append(prediction)
+
+    sorted_list = sorted(prediction_list, key=itemgetter('city', 'rating', 'count'))
+
+    recommend_list = []
+    for prediction in sorted_list[:n]:
+        # get business data
+        business = data.get_business(prediction['city'], prediction['id'])
+        # collect recommendation info
+        recommendation = {
+            'business_id': prediction['id'],
+            'stars': prediction['avg'],
+            'name': business['name'],
+            'city': prediction['city'],
+            'address': business['address']
+        }
+        recommend_list.append(recommendation)
     
-    return [prediction] * 10
+    return recommend_list
 
 
 if __name__ == '__main__':

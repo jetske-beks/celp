@@ -125,6 +125,8 @@ def initialisation(n=-1):
     global CITIES, BUSINESSES, REVIEWS
     global UTILITY, SIMILARITY
 
+    print(" * Loading data for %i cities..." % n)
+
     # load data
     CITIES = load_cities()[:n]
     BUSINESSES = load(CITIES, "business")
@@ -244,9 +246,40 @@ def get_user(username):
             for line in f:
                 user = json.loads(line)
                 if user['name'] == username:
+                    user['city'] = city
                     return user
 
     raise IndexError(f"invalid username {username}")
+
+# - - - - - - - - - - - - - - more getter functions - - - - - - - - - - - - - - #
+
+def get_usercity(user_id):
+    """
+    Get the city of a user by its user_id
+    Returns a city in the form of a string
+    """
+    for city in load_cities():
+        with open(f"{DATA_DIR}/{city}/user.json", "r") as f:
+            for line in f:
+                user = json.loads(line)
+                if user['user_id'] == user_id:
+                    return city
+
+    raise IndexError(f"invalid username {username}")
+
+def get_city(city):
+    """
+    Given a city name, return the data for all businesses.
+    Returns an array of the form:
+        [<business1>, <business2>, ...]
+    """
+    with open(f"{DATA_DIR}/{city}/business.json", "r") as f:
+        business_list = []
+        for line in f:
+            business = json.loads(line)
+            business_list.append(business)
+
+    return business_list
 
 
 if __name__ == '__main__':

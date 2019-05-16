@@ -21,7 +21,7 @@ def index():
     user_id = user["user_id"] if user else None
 
     # Get 10 recommendations
-    recommendations = recommender.recommend(user_id=user_id, n=10)
+    recommendations = recommender.recommend(user=user, n=10)
 
     # Render
     return render_template("index.html", recommendations=recommendations, user=session.get("user"))
@@ -67,7 +67,7 @@ def business(city, id):
     reviews = data.get_reviews(city=business["city"].lower(), business_id=business["business_id"])
 
     # Get 10 recommendations
-    recommendations = recommender.recommend(user_id=user_id, business_id=id, city=business["city"].lower(), n=10)
+    recommendations = recommender.recommend(user=user, business_id=id, city=business["city"].lower(), n=10)
 
     # Render
     return render_template("business.html", business=business, recommendations=recommendations, reviews=reviews, user=user)
