@@ -215,6 +215,7 @@ def initialisation(n=-1):
     print(UTILITY_CATEGORIES.head())
     end = time.time()
     print(" * Calculating utility matrix took %f seconds" % (end - start))
+    UTILITY_CATEGORIES.to_pickle('utility_content.pkl')
 
     start = time.time()
     SIMILARITY_CATEGORIES = create_categorie_similarties(UTILITY_CATEGORIES)
@@ -330,6 +331,21 @@ def get_city_reviews(city):
     reviews = optimize(reviews, {'city': 'category'})
 
     return reviews
+
+def get_city_users(city):
+    """
+    Given a city name, return the data for all users.
+    Returns an array of the form:
+        [<user1>, <user2>, ...]
+    """
+    with open(f"{DATA_DIR}/{city}/user.json", "r") as f:
+        user_list = []
+        for line in f:
+            user = json.loads(line)
+            user_list.append(user)
+
+    return user_list
+
 
 
 if __name__ == '__main__':
