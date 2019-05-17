@@ -2,6 +2,7 @@ from data import UTILITY, SIMILARITY
 from operator import itemgetter
 
 import data
+import numpy
 import pandas
 import random
 
@@ -25,6 +26,55 @@ def weighted_mean(neighborhood, user):
     ratings = UTILITY[user].loc[neighborhood.index]
     # calculate the predicted rating
     return (ratings * neighborhood).sum() / neighborhood.sum()
+
+def mse(predicted):
+    # get the difference
+    difference = predicted['stars'] - predicted['prediction']
+    # return the mean square error
+    return numpy.square(difference).sum() / len(predicted)
+
+def baseline():
+    data = pandas.DataFrame(index=UTILITY.index, columns=UTILITY.columns)
+    avg = UTILITY.apply(numpy.mean)
+
+def baseline_prediction(data):
+    # get all unique ids
+    business_ids = data['business_id'].unique()
+    user_ids = data['user_id'].unique()
+    # add a 'predicted rating' column
+    data['prediction'] = pandas.Series(numpy.nan, index=data.index)
+    print(" * Starting predict test for %i businesses..." % len(business_ids))
+    # predict a rating for every business
+    count = 0
+    for business in business_ids:
+        count += 1
+        print("   %i" % count)
+        for user in user_ids:
+            # calculate neighborhood & get prediction
+            prediction = data.loc[data['business_id'] == business, 'stars'].mean()
+            # add to the data
+            data.loc[(data['business_id'] == business) & (data['user_id'] == user), 'prediction'] = prediction
+    return data
+
+def predict(data):
+    """ Predict the ratings for all items in the data. """
+    # get all unique ids
+    business_ids = data['business_id'].unique()
+    user_ids = data['user_id'].unique()
+    # add a 'predicted rating' column
+    data['prediction'] = pandas.Series(numpy.nan, index=data.index)
+    print(" * Starting predict test for %i businesses..." % len(business_ids))
+    # predict a rating for every business
+    count = 0
+    for business in business_ids:
+        count += 1
+        print("   %i" % count)
+        for user in user_ids:
+            # calculate neighborhood & get prediction
+            prediction = weighted_mean(select_neighborhood(user, business), user)
+            # add to the data
+            data.loc[(data['business_id'] == business) & (data['user_id'] == user), 'prediction'] = prediction
+    return data
 
 def recommend(user=None, business_id='U_ihDw5JhfmSKBUUkpEQqw', city=None, n=10):
     """
@@ -50,11 +100,19 @@ def recommend(user=None, business_id='U_ihDw5JhfmSKBUUkpEQqw', city=None, n=10):
     if not city:
         city = user['city']
     # get city data
-    businesses = data.get_city(city)
-    while len(businesses) < n:
-        city = random.choice(data.load_cities())
-        business = data.get_city(city)
-        businesses.extend(business)
+    reviews = data.get_city(city)
+    #while len(businesses) < n:
+    #    city = random.choice(data.load_cities())
+    #    business = data.get_city(city)
+    #    businesses.extend(business)
+
+    # run tests
+    predictions = predict(reviews)
+    mserr = mse(predictions)
+    print("mse: %f" % mserr)
+    baseline = baseline_prediction(reviews)
+    msbsl = mse(baseline)
+    print("mse: %f" % msbsl)
 
     # make predictions for all businesses in the city
     prediction_list = []

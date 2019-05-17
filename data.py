@@ -166,11 +166,11 @@ def initialisation(n=-1):
     end = time.time()
     print(" * Calculating utility matrix took %f seconds" % (end - start))
 
-    # mean-center the matrix
-    utility = utility - utility.mean()
-
     utility.to_pickle('utility.pkl')
     UTILITY = utility
+
+    # mean-center the matrix
+    utility = utility - utility.mean()
 
     # calculate similarity matrix
     start = time.time()
@@ -253,33 +253,23 @@ def get_user(username):
 
 # - - - - - - - - - - - - - - more getter functions - - - - - - - - - - - - - - #
 
-def get_usercity(user_id):
-    """
-    Get the city of a user by its user_id
-    Returns a city in the form of a string
-    """
-    for city in load_cities():
-        with open(f"{DATA_DIR}/{city}/user.json", "r") as f:
-            for line in f:
-                user = json.loads(line)
-                if user['user_id'] == user_id:
-                    return city
-
-    raise IndexError(f"invalid username {username}")
-
 def get_city(city):
     """
-    Given a city name, return the data for all businesses.
-    Returns an array of the form:
-        [<business1>, <business2>, ...]
+    Given a city name, return the data for all reviews.
+    Returns a pandas DataFrame.
     """
-    with open(f"{DATA_DIR}/{city}/business.json", "r") as f:
-        business_list = []
+    with open(f"{DATA_DIR}/{city}/review.json", "r") as f:
+        review_list = []
         for line in f:
-            business = json.loads(line)
-            business_list.append(business)
+            review = json.loads(line)
+            review_list.append(review)
 
-    return business_list
+    # convert to pandas DataFrame
+    reviews = to_pandas([city], {city: review_list})
+    # optimize memory usage
+    reviews = optimize(reviews, {'city': 'category'})
+
+    return reviews
 
 
 if __name__ == '__main__':
