@@ -253,7 +253,20 @@ def get_user(username):
 
 # - - - - - - - - - - - - - - more getter functions - - - - - - - - - - - - - - #
 
-def get_city(city):
+def get_city_businesses(city):
+    """
+    Given a city name, return the data for all businesses.
+    Returns an array of the form:
+        [<business1>, <business2>, ...]
+    """
+    with open(f"{DATA_DIR}/{city}/business.json", "r") as f:
+        business_list = []
+        for line in f:
+            business= json.loads(line)
+            business_list.append(business)
+    return business_list
+
+def get_city_reviews(city):
     """
     Given a city name, return the data for all reviews.
     Returns a pandas DataFrame.

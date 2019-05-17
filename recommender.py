@@ -99,20 +99,22 @@ def recommend(user=None, business_id='U_ihDw5JhfmSKBUUkpEQqw', city=None, n=10):
         user = data.get_user('John')
     if not city:
         city = user['city']
-    # get city data
-    reviews = data.get_city(city)
-    #while len(businesses) < n:
-    #    city = random.choice(data.load_cities())
-    #    business = data.get_city(city)
-    #    businesses.extend(business)
+    # get city reviews for tests
+    reviews = data.get_city_reviews(city)
+    # get city businesses for recommendations
+    businesses = data.get_city_businesses(city)
+    while len(businesses) < n:
+        city = random.choice(data.load_cities())
+        business = data.get_city(city)
+        businesses.extend(business)
 
     # run tests
-    predictions = predict(reviews)
-    mserr = mse(predictions)
-    print("mse: %f" % mserr)
-    baseline = baseline_prediction(reviews)
-    msbsl = mse(baseline)
-    print("mse: %f" % msbsl)
+    #predictions = predict(reviews)
+    #mserr = mse(predictions)
+    #print("mse: %f" % mserr)
+    #baseline = baseline_prediction(reviews)
+    #msbsl = mse(baseline)
+    #print("mse: %f" % msbsl)
 
     # make predictions for all businesses in the city
     prediction_list = []
