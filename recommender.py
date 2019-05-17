@@ -85,11 +85,11 @@ def content_prediction(user_id, business_ids, utility, similarity):
     predictions = pandas.Series()
     counter = 0
     for business in business_ids:
-      if not business in similarity:
-        counter += 1
-        continue
-      sim = similarity[business]
-      predictions.at[business] = (ratings * sim.loc[ratings.index]).mean()
+        if not business in similarity:
+            counter += 1
+            continue
+        sim = similarity[business]
+        predictions.at[business] = (ratings * sim.loc[ratings.index]).mean()
     print(len(business_ids))
     print(counter)
     return predictions
@@ -99,13 +99,13 @@ def recommend_collab(businesses, user, business_id=None):
     for business in businesses:
         if business['business_id'] == business_id:
             continue
-         # save info about the business
+        # save info about the business
         prediction = {
             'id': business['business_id'],
             'count': business['review_count'],
             'avg': business['stars'],
             'city': business['city'].lower()
-            } 
+        } 
         # get prediction
         prediction['rating'] = weighted_mean(select_neighborhood(user['user_id'], prediction['id']), user['user_id'])
         prediction_list.append(prediction)
@@ -122,7 +122,7 @@ def recommend_content(businesses, user, business_id=None):
     return predictions
 
     
-def recommend(user=None, business_id='U_ihDw5JhfmSKBUUkpEQqw', city=None, n=10):
+def recommend(user=None, business_id=None, city=None, n=10):
     """
     Returns n recommendations as a list of dicts.
     Optionally takes in a user, business_id and/or city.
@@ -148,38 +148,34 @@ def recommend(user=None, business_id='U_ihDw5JhfmSKBUUkpEQqw', city=None, n=10):
     if not SIMILARITY_CATEGORIES:
         SIMILARITY_CATEGORIES = pandas.read_pickle('similarity_content.pkl')
 
-    # fill in user, city, business
+    # fill in user, city
     if not user:
         user = data.get_city_users('eastlake')[0]
     if not city:
         city = 'eastlake'
 
-    # get city reviews for tests
-    reviews = data.get_city_reviews(city)
-    # get city businesses for recommendations
-    businesses = data.get_city_businesses(city)
-    while len(businesses) < n:
-        city = random.choice(data.load_cities())
-        business = data.get_city(city)
-        businesses.extend(business)
+    state = get_state(city)
+    cities = load_cities(state)
 
-    # make predictions for all businesses in the city
+    # get state businesses for recommendations
+    businesses = data.load(cities, 'business')
+
+    # make predictions for all businesses in the cities
     predictions_collab = recommend_collab(businesses, user, business_id)
     predictions_content = recommend_content(businesses, user)
 
-
     if predictions_content.empty:
-      return []
+        raise Exception("Predictions are empty!")
     recommend_list = []
     for p in predictions_content[:n].index:
-      business = [b for b in businesses if b['business_id'] == p][0]
-      recommend_list.append({
-        'business_id': p,
-        'stars': business['stars'],
-        'name': business['name'],
-        'city': business['city'],
-        'address': business['address']
-      })
+        business = [b for b in businesses if b['business_id'] == p][0]
+        recommend_list.append({
+            'business_id': p,
+            'stars': business['stars'],
+            'name': business['name'],
+            'city': business['city'],
+            'address': business['address']
+        })
 
     return (recommend_list * n)[:n]
 

@@ -6,6 +6,7 @@ Do ensure these functions remain functional:
     - get_reviews(city, business_id=None, user_id=None, n=10)
     - get_user(username)
 """
+import state
 
 import os
 import json
@@ -28,11 +29,13 @@ SIMILARITY_CATEGORIES = []
 
 # - - - - - - - - - - - - - - - - load functions - - - - - - - - - - - - - - - #
 
-def load_cities():
+def load_cities(state_abbr=None):
     """
     Finds all cities (all directory names) in ./DATA_DIR
     Returns a list of city names
     """
+    if state_abbr:
+        return state.process_cities(DATA_DIR, state_abbr)
     return os.listdir(DATA_DIR)
 
 
@@ -150,14 +153,20 @@ def create_categorie_similarties(matrix):
 
 # - - - - - - - - - - - - - - - initialisation - - - - - - - - - - - - - - - - #
 
-def initialisation(n=-1):
+def initialisation(n=-1, state=None):
     global CITIES, BUSINESSES, REVIEWS
     global UTILITY, SIMILARITY, UTILITY_CATEGORIES, SIMILARITY_CATEGORIES
 
-    print(" * Loading data for %i cities..." % n)
+    if state and n > 0:
+        print(" * Loading %i cities in state %s..." % (n, state))
+    elif n > 0:
+        print(" * Loading data for %i cities..." % n)
+    elif state:
+        print(" * Loading data for state %s..." % state)
+
 
     # load data
-    CITIES = load_cities()[:n] if n >=0 else load_cities()
+    CITIES = load_cities(state)[:n] if n >=0 else load_cities()
     BUSINESSES = load(CITIES, "business")
     REVIEWS = load(CITIES, "review", ['funny', 'cool', 'useful', 'text', 'date'])
 
@@ -308,6 +317,13 @@ def get_user(username):
 
 # - - - - - - - - - - - - - - more getter functions - - - - - - - - - - - - - - #
 
+def get_state(city):
+    """ Given a city name, return the state it is located. """
+    with open(f"{DATA_DIR}/{city}/state.json") as f:
+        for line in f:
+            state = json.loads(line)
+    return state['state']
+
 def get_city_businesses(city):
     """
     Given a city name, return the data for all businesses.
@@ -316,8 +332,8 @@ def get_city_businesses(city):
     """
     with open(f"{DATA_DIR}/{city}/business.json", "r") as f:
         business_list = []
-        for line in f:
-            business= json.loads(line)
+        for line in  f:
+            business = json.loads(line)
             business_list.append(business)
     return business_list
 

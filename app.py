@@ -80,5 +80,5 @@ def send_static(path):
 
 
 if __name__ == "__main__":
-    data.initialisation(n=100)
+    data.initialisation(state='OH')
     app.run()
