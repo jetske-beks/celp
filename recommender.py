@@ -93,6 +93,34 @@ def content_prediction(user_id, business_ids, utility, similarity):
     print(len(business_ids))
     print(counter)
     return predictions
+
+def recommend_collab(businesses, user, business_id=None):
+    prediction_list = []
+    for business in businesses:
+        if business['business_id'] == business_id:
+            continue
+         # save info about the business
+        prediction = {
+            'id': business['business_id'],
+            'count': business['review_count'],
+            'avg': business['stars'],
+            'city': business['city'].lower()
+            } 
+        # get prediction
+        prediction['rating'] = weighted_mean(select_neighborhood(user['user_id'], prediction['id']), user['user_id'])
+        prediction_list.append(prediction)
+
+    sorted_list = sorted(prediction_list, key=itemgetter('city', 'rating', 'count'))
+
+    return sorted_list
+
+def recommend_content(businesses, user, business_id=None):
+    business_ids = [b['business_id'] for b in businesses]
+    predictions = content_prediction(user['user_id'], business_ids, UTILITY, SIMILARITY_CATEGORIES)
+    predictions.sort_values(inplace=True);
+    
+    return predictions
+
     
 def recommend(user=None, business_id='U_ihDw5JhfmSKBUUkpEQqw', city=None, n=10):
     """
@@ -112,13 +140,14 @@ def recommend(user=None, business_id='U_ihDw5JhfmSKBUUkpEQqw', city=None, n=10):
     # read in matrices
     if not UTILITY:
         UTILITY = pandas.read_pickle('utility.pkl')
-    #if not SIMILARITY:
-        #data.SIMILARITY = pandas.read_pickle('similarity.pkl')
+    if not SIMILARITY:
+        data.SIMILARITY = pandas.read_pickle('similarity.pkl')
 
     if not UTILITY_CATEGORIES:
         UTILITY_CATEGORIES = pandas.read_pickle('utility_content.pkl')
     if not SIMILARITY_CATEGORIES:
         SIMILARITY_CATEGORIES = pandas.read_pickle('similarity_content.pkl')
+
     # fill in user, city, business
     if not user:
         user = data.get_city_users('eastlake')[0]
@@ -134,54 +163,15 @@ def recommend(user=None, business_id='U_ihDw5JhfmSKBUUkpEQqw', city=None, n=10):
         business = data.get_city(city)
         businesses.extend(business)
 
-    # run tests
-    #predictions = predict(reviews)
-    #mserr = mse(predictions)
-    #print("mse: %f" % mserr)
-    #baseline = baseline_prediction(reviews)
-    #msbsl = mse(baseline)
-    #print("mse: %f" % msbsl)
-
     # make predictions for all businesses in the city
-    #prediction_list = []
-    #for business in businesses:
-    #    if business['business_id'] == business_id:
-    #        continue
-    #    # save info about the business
-    #    prediction = {
-    #        'id': business['business_id'],
-    #        'count': business['review_count'],
-    #        'avg': business['stars'],
-    #        'city': business['city'].lower()
-    #        } 
-        # get prediction
-    #    prediction['rating'] = weighted_mean(select_neighborhood(user['user_id'], prediction['id']), user['user_id'])
-    #    prediction_list.append(prediction)
+    predictions_collab = recommend_collab(businesses, user, business_id)
+    predictions_content = recommend_content(businesses, user)
 
-    #sorted_list = sorted(prediction_list, key=itemgetter('city', 'rating', 'count'))
 
-    #recommend_list = []
-    #for prediction in sorted_list[:n]:
-        # get business data
-    #    business = data.get_business(prediction['city'], prediction['id'])
-        # collect recommendation info
-    #    recommendation = {
-    #        'business_id': prediction['id'],
-    #        'stars': prediction['avg'],
-    #        'name': business['name'],
-    #        'city': prediction['city'],
-    #        'address': business['address']
-    #    }
-    #    recommend_list.append(recommendation)
-
-    business_ids = [b['business_id'] for b in businesses]
-    predictions = content_prediction(user['user_id'], business_ids, UTILITY, SIMILARITY_CATEGORIES)
-    predictions.sort_values(inplace=True);
-    print(predictions)
-    if predictions.empty:
+    if predictions_content.empty:
       return []
     recommend_list = []
-    for p in predictions[:n].index:
+    for p in predictions_content[:n].index:
       business = [b for b in businesses if b['business_id'] == p][0]
       recommend_list.append({
         'business_id': p,
@@ -190,8 +180,7 @@ def recommend(user=None, business_id='U_ihDw5JhfmSKBUUkpEQqw', city=None, n=10):
         'city': business['city'],
         'address': business['address']
       })
-    
-    print(recommend_list)
+
     return (recommend_list * n)[:n]
 
 

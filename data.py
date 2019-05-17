@@ -201,6 +201,15 @@ def initialisation(n=-1):
     # mean-center the matrix
     utility = utility - utility.mean()
 
+		# calculate similarity matrix
+    #start = time.time()
+    #similarity = calculate_similarity(utility)
+    #end = time.time()
+    #print(" * Calculating similarity matrix took %f seconds" % (end - start))
+    
+    #similarity.to_pickle('similarity.pkl')
+    #SIMILARITY = similarity
+
     # calculate similarity matrix
     start = time.time()
     df_categories = get_categories(business)
@@ -226,8 +235,6 @@ def initialisation(n=-1):
     SIMILARITY_CATEGORIES.to_pickle('similarity_content.pkl')
 
 
-    similarity.to_pickle('similarity.pkl')
-    SIMILARITY = similarity
 
 # - - - - - - - - - - - - - functions used in app.py - - - - - - - - - - - - - #
 
