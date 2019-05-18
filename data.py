@@ -166,7 +166,7 @@ def initialisation(n=-1, state=None):
 
 
     # load data
-    CITIES = load_cities(state)[:n] if n >=0 else load_cities()
+    CITIES = load_cities(state)[:n] if n >=0 else load_cities(state)
     BUSINESSES = load(CITIES, "business")
     REVIEWS = load(CITIES, "review", ['funny', 'cool', 'useful', 'text', 'date'])
 
@@ -324,17 +324,18 @@ def get_state(city):
             state = json.loads(line)
     return state['state']
 
-def get_city_businesses(city):
+def get_businesses(cities):
     """
-    Given a city name, return the data for all businesses.
+    Given a list of cities, return the data for all businesses.
     Returns an array of the form:
         [<business1>, <business2>, ...]
     """
-    with open(f"{DATA_DIR}/{city}/business.json", "r") as f:
-        business_list = []
-        for line in  f:
-            business = json.loads(line)
-            business_list.append(business)
+    business_list = []
+    for city in cities:
+        with open(f"{DATA_DIR}/{city}/business.json", "r") as f:
+            for line in  f:
+                business = json.loads(line)
+                business_list.append(business)
     return business_list
 
 def get_city_reviews(city):

@@ -4,7 +4,7 @@ import json
 def write_state(state, city, data_dir):
     """ Write the state to a new json file in the city dir. """
     with open(f"{data_dir}/{city}/state.json", 'w+') as f:
-        f.write("{'state':'%s'}\n" % state)
+        f.write("{\"state\":\"%s\"}\n" % state)
 
 def process_city(city, data_dir, state):
     """ Find the state a city is in. """

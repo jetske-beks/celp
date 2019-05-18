@@ -154,11 +154,11 @@ def recommend(user=None, business_id=None, city=None, n=10):
     if not city:
         city = 'eastlake'
 
-    state = get_state(city)
-    cities = load_cities(state)
+    state = data.get_state(city)
+    cities = data.load_cities(state)
 
     # get state businesses for recommendations
-    businesses = data.load(cities, 'business')
+    businesses = data.get_businesses(cities)
 
     # make predictions for all businesses in the cities
     predictions_collab = recommend_collab(businesses, user, business_id)
