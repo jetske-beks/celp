@@ -83,15 +83,11 @@ def content_prediction(user_id, business_ids, utility, similarity):
     """
     ratings = utility[user_id].dropna()
     predictions = pandas.Series()
-    counter = 0
     for business in business_ids:
         if not business in similarity:
-            counter += 1
             continue
         sim = similarity[business]
         predictions.at[business] = (ratings * sim.loc[ratings.index]).mean()
-    print(len(business_ids))
-    print(counter)
     return predictions
 
 def recommend_collab(businesses, user, business_id=None):
@@ -114,7 +110,7 @@ def recommend_collab(businesses, user, business_id=None):
 
     return sorted_list
 
-def recommend_content(businesses, user, business_id=None):
+def recommend_content(businesses, user, business_id=None, utility=None):
     business_ids = [b['business_id'] for b in businesses]
     predictions = content_prediction(user['user_id'], business_ids, UTILITY, SIMILARITY_CATEGORIES)
     predictions.sort_values(inplace=True);
