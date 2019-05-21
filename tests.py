@@ -16,13 +16,47 @@ def split_train_test(user_ratings, test_size=25):
     user_ratings_test[user] = user_ratings[user][test_mask]
   return user_ratings_train, user_ratings_test
 
-def build_utility_matrix(user_ratings, business_ids):
-  df = pd.DataFrame(index=user_ratings.index, columns=business_ids)
+def build_utility_matrix(user_ratings):
+  #df = pd.DataFrame(columns=user_ratings.index)
+  lst = []
   for user in user_ratings.index:
-    for business in user_ratings[user].index:
-      df[user][business] = user_ratings[user][business]
+    lst.append(user_ratings[user])
+  df = pd.concat(lst, axis=1, sort=False)
+    #for business in user_ratings[user].index:
+      #df[user][business] = user_ratings[user][business]
 
   return df
+
+def top_5_test_collab(user_ratings_test, utility, similarity):
+  predicted_ratings = pd.Series()
+  for user in user_ratings_test.index:
+    prediction = pd.Series()
+    businesses = user_ratings_test[user].index
+    for business in businesses:
+      prediction.at[business] = recommender.weighted_mean(recommender.select_neighborhood(user, business), user) 
+    predicted_ratings[user] = prediction.astype(object)
+    predicted_ratings[user].sort_values(inplace=True)
+
+  known_top_10 = pd.Series()
+  for user in user_ratings_test.index:
+    known_top_10[user] = user_ratings_test[user].sort_values()[:10]
+
+  predicted_5 = pd.Series()
+  for user in predicted_ratings.index:
+    predicted_5[user] = predicted_ratings[user][:5]
+
+  correct = 0
+  for user in predicted_5.index:
+    correct += sum([1 for b in predicted_5[user].index if b in known_top_10[user].index])
+  precission = correct / (predicted_5.size * 5)
+  print(precission)
+
+  mse = 0
+  for user in predicted_ratings.index:
+    mse += sum([abs(predicted_ratings[user][b] - user_ratings_test[user][b]) for b in predicted_ratings[user].index])
+
+  mse /= (predicted_ratings.size * 25)
+  print(mse)
 
 def top_5_test_content(user_ratings_test, utility, similarity):
   predicted_ratings = pd.Series()
@@ -75,12 +109,13 @@ if __name__ == '__main__':
   if user_ratings.size == 0:
     exit(0)
   user_ratings_train, user_ratings_test = split_train_test(user_ratings)
-  new_utility = build_utility_matrix(user_ratings_train, data.UTILITY.columns)
+  new_utility = build_utility_matrix(user_ratings_train)
   print(new_utility.head())
+  print(len(new_utility))
 
-  #if options.collab:
-    #similarity = data.calculate_similarity(new_utility)
-    #print(similarity.head())
+  if options.collab:
+    similarity = data.calculate_similarity(new_utility)
+    top_5_test_collab(user_ratings_test, new_utility, similarity)
   
   if options.content:
     top_5_test_content(user_ratings_test, new_utility, data.SIMILARITY_CATEGORIES)
