@@ -104,8 +104,8 @@ def optimize(frame, types):
 def cosine_similarity(business1, business2):
     """ Calculate cosine similarity between two businesses. """
     # select for users that have rated both businesses
-    index1 = numpy.argwhere(~numpy.isnan(business1))
-    index2 = numpy.argwhere(~numpy.isnan(business2))
+    index1 = numpy.argwhere(~pandas.isnull(business1))
+    index2 = numpy.argwhere(~pandas.isnull(business2))
     selected = numpy.intersect1d(index1, index2)
     if not selected.any():
         return 0
