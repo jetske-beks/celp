@@ -104,8 +104,8 @@ def optimize(frame, types):
 def cosine_similarity(business1, business2):
     """ Calculate cosine similarity between two businesses. """
     # select for users that have rated both businesses
-    index1 = numpy.argwhere(~numpy.isnan(business1))
-    index2 = numpy.argwhere(~numpy.isnan(business2))
+    index1 = numpy.argwhere(~pandas.isnull(business1))
+    index2 = numpy.argwhere(~pandas.isnull(business2))
     selected = numpy.intersect1d(index1, index2)
     if not selected.any():
         return 0
@@ -153,7 +153,7 @@ def create_categorie_similarties(matrix):
 
 # - - - - - - - - - - - - - - - initialisation - - - - - - - - - - - - - - - - #
 
-def initialisation(n=-1, state=None):
+def initialisation(n=-1, state=None, test=False):
     global CITIES, BUSINESSES, REVIEWS
     global UTILITY, SIMILARITY, UTILITY_CATEGORIES, SIMILARITY_CATEGORIES
 
@@ -167,6 +167,8 @@ def initialisation(n=-1, state=None):
 
     # load data
     CITIES = load_cities(state)[:n] if n >=0 else load_cities(state)
+    if 'eastlake' not in CITIES:
+      CITIES[-1] = 'eastlake'
     BUSINESSES = load(CITIES, "business")
     REVIEWS = load(CITIES, "review", ['funny', 'cool', 'useful', 'text', 'date'])
 
@@ -204,8 +206,32 @@ def initialisation(n=-1, state=None):
     end = time.time()
     print(" * Calculating utility matrix took %f seconds" % (end - start))
 
-    utility.to_pickle('utility.pkl')
     UTILITY = utility
+
+
+    # calculate similarity matrix
+    start = time.time()
+    df_categories = get_categories(business)
+    end = time.time()
+    print(" * Getting categories took %f seconds" % (end - start))
+
+    start = time.time()
+    UTILITY_CATEGORIES = pivot_categories(df_categories)
+    end = time.time()
+    print(" * Calculating utility matrix took %f seconds" % (end - start))
+    #UTILITY_CATEGORIES.to_pickle('utility_content.pkl')
+
+    start = time.time()
+    SIMILARITY_CATEGORIES = create_categorie_similarties(UTILITY_CATEGORIES)
+    end = time.time()
+    print(" * Calculating similarity matrix took %f seconds" % (end - start))
+    #SIMILARITY_CATEGORIES.to_pickle('similarity_content.pkl')
+    
+    if test:
+      return
+
+    utility.to_pickle('utility.pkl')
+
 
     # mean-center the matrix
     utility = utility - utility.mean()
@@ -219,29 +245,6 @@ def initialisation(n=-1, state=None):
     #similarity.to_pickle('similarity.pkl')
     #SIMILARITY = similarity
 
-    # calculate similarity matrix
-    start = time.time()
-    df_categories = get_categories(business)
-    print('CATEGORIES')
-    print(df_categories.head())
-    end = time.time()
-    print(" * Getting categories took %f seconds" % (end - start))
-
-    start = time.time()
-    UTILITY_CATEGORIES = pivot_categories(df_categories)
-    print('UTILITY')
-    print(UTILITY_CATEGORIES.head())
-    end = time.time()
-    print(" * Calculating utility matrix took %f seconds" % (end - start))
-    UTILITY_CATEGORIES.to_pickle('utility_content.pkl')
-
-    start = time.time()
-    SIMILARITY_CATEGORIES = create_categorie_similarties(UTILITY_CATEGORIES)
-    print('SIMILARITY')
-    print(SIMILARITY_CATEGORIES.head())
-    end = time.time()
-    print(" * Calculating similarity matrix took %f seconds" % (end - start))
-    SIMILARITY_CATEGORIES.to_pickle('similarity_content.pkl')
 
 
 
