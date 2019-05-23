@@ -118,7 +118,7 @@ def recommend_content(businesses, user, business_id=None, utility=None):
     return predictions
 
     
-def recommend(user=None, business_id=None, city=None, n=10):
+def recommend(user=None, business_id=None, city=None, n=10, method='collab'):
     """
     Returns n recommendations as a list of dicts.
     Optionally takes in a user, business_id and/or city.
@@ -157,13 +157,17 @@ def recommend(user=None, business_id=None, city=None, n=10):
     businesses = data.get_businesses(cities)
 
     # make predictions for all businesses in the cities
-    predictions_collab = recommend_collab(businesses, user, business_id)
-    predictions_content = recommend_content(businesses, user)
+    if method is 'collab':
+      predictions = recommend_collab(businesses, user, business_id)
+    elif method is 'content':
+      predictions = recommend_content(businesses, user)
+    elif method is 'hybrid':
+      predictions = recommend_hybrid(businesses, user)
 
-    if predictions_content.empty:
+    if predictions.empty:
         raise Exception("Predictions are empty!")
     recommend_list = []
-    for p in predictions_content[:n].index:
+    for p in predictions[:n].index:
         business = [b for b in businesses if b['business_id'] == p][0]
         recommend_list.append({
             'business_id': p,

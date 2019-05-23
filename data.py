@@ -203,7 +203,6 @@ def initialisation(n=-1, state=None, test=False):
     # calculate utility matrix
     start = time.time()
     utility = reviews.pivot_table(index='business_id', columns='user_id', values='stars')
-    print(utility.head())
     end = time.time()
     print(" * Calculating utility matrix took %f seconds" % (end - start))
 
@@ -220,13 +219,13 @@ def initialisation(n=-1, state=None, test=False):
     UTILITY_CATEGORIES = pivot_categories(df_categories)
     end = time.time()
     print(" * Calculating utility matrix took %f seconds" % (end - start))
-    UTILITY_CATEGORIES.to_pickle('utility_content.pkl')
+    #UTILITY_CATEGORIES.to_pickle('utility_content.pkl')
 
     start = time.time()
     SIMILARITY_CATEGORIES = create_categorie_similarties(UTILITY_CATEGORIES)
     end = time.time()
     print(" * Calculating similarity matrix took %f seconds" % (end - start))
-    SIMILARITY_CATEGORIES.to_pickle('similarity_content.pkl')
+    #SIMILARITY_CATEGORIES.to_pickle('similarity_content.pkl')
     
     if test:
       return
